@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>সুরক্ষিত লিংক লকার</title>
+    <title>Secure Link Locker</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -84,7 +84,14 @@
             color: #1a73e8;
             text-align: center;
             margin-bottom: 10px;
-            cursor: pointer;
+            font-weight: bold;
+        }
+        .copy-status {
+            color: #137333; 
+            font-weight: bold; 
+            margin-top: 0; 
+            text-align: center;
+            font-size: 15px;
         }
         .error {
             color: #d93025;
@@ -99,39 +106,40 @@
 
 <div class="container">
     <div id="create-panel" style="display: none;">
-        <h2>🔗 সুরক্ষিত লিংক তৈরি করুন</h2>
+        <h2>🔗 Create Protected Link</h2>
         <div class="form-group">
-            <label for="target-url">আপনার আসল লিংক:</label>
+            <label for="target-url">Target URL (Your Link):</label>
             <input type="text" id="target-url" placeholder="https://example.com">
         </div>
         <div class="form-group">
-            <label for="target-password">পাসওয়ার্ড দিন:</label>
-            <input type="password" id="target-password" placeholder="গোপন পাসওয়ার্ড">
+            <label for="target-password">Set Password:</label>
+            <input type="password" id="target-password" placeholder="Enter secret password">
         </div>
-        <button onclick="generateLink()">লক করা লিংক তৈরি করুন</button>
+        <button onclick="generateLink()">Generate & Copy Link</button>
 
         <div class="result-box" id="result-box">
-            <p style="color: #137333; font-weight: bold; margin-top: 0; text-align: center;">✔ লিংক তৈরি হয়েছে (নিচে ক্লিক করে কপি করুন):</p>
-            <div class="share-url" id="generated-url" onclick="copyToClipboard()"></div>
-            <p style="font-size: 11px; color: #5f6368; margin: 0; text-align: center;">(এই লিংকটি যাকে পাঠাবেন সে সরাসরি আপনার পাসওয়ার্ড পেজ দেখতে পাবে)</p>
+            <p class="copy-status">✔ Link Generated & Copied to Clipboard!</p>
+            <div class="share-url" id="generated-url"></div>
+            <p style="font-size: 11px; color: #5f6368; margin: 0; text-align: center;">(You can now directly paste [Ctrl+V] and share this link anywhere)</p>
         </div>
     </div>
 
     <div id="unlock-panel" style="display: none;">
-        <h2>🔒 এই লিংকটি পাসওয়ার্ড সুরক্ষিত</h2>
-        <p style="text-align: center; color: #5f6368; font-size: 14px;">মূল কনটেন্টে প্রবেশ করতে সঠিক পাসওয়ার্ডটি দিন।</p>
+        <h2>🔒 Password Protected</h2>
+        <p style="text-align: center; color: #5f6368; font-size: 14px;">Enter the correct password to access the destination URL.</p>
         <div class="form-group">
-            <label for="input-password">পাসওয়ার্ড লিখুন:</label>
-            <input type="password" id="input-password" placeholder="পাসওয়ার্ড দিন">
+            <label for="input-password">Password:</label>
+            <input type="password" id="input-password" placeholder="Enter password">
         </div>
-        <button onclick="verifyPassword()" style="background-color: #28a745;">কনফার্ম করুন</button>
-        <div id="error-msg" class="error" style="display: none;">❌ ভুল পাসওয়ার্ড! আবার চেষ্টা করুন।</div>
+        <button onclick="verifyPassword()" style="background-color: #28a745;">Unlock Link</button>
+        <div id="error-msg" class="error" style="display: none;">❌ Incorrect password! Please try again.</div>
     </div>
 </div>
 
 <script>
     let encryptedData = "";
 
+    // Check URL parameters on load
     window.onload = function() {
         const urlParams = new URLSearchParams(window.location.search);
         encryptedData = urlParams.get('p');
@@ -143,12 +151,13 @@
         }
     };
 
+    // Generate link and auto-copy
     function generateLink() {
         let url = document.getElementById('target-url').value.trim();
         const password = document.getElementById('target-password').value.trim();
 
         if (!url || !password) {
-            alert("অনুগ্রহ করে লিংক এবং পাসওয়ার্ড দুটিই দিন!");
+            alert("Please fill in both the URL and Password fields!");
             return;
         }
 
@@ -156,17 +165,22 @@
             url = 'https://' + url;
         }
 
-        // শুধুমাত্র পাসওয়ার্ড এবং লিংকের শেষ অংশ এনকোড করা হচ্ছে যেন লিংক খুব বেশি বড় না হয়
+        // Encode data to base64
         const dataToEncode = JSON.stringify({ u: url, p: password });
         const encoded = btoa(unescape(encodeURIComponent(dataToEncode)));
 
         const currentCleanUrl = window.location.href.split('?')[0];
         const finalUrl = currentCleanUrl + "?p=" + encoded;
 
+        // Display the URL
         document.getElementById('generated-url').innerText = finalUrl;
         document.getElementById('result-box').style.display = 'block';
+
+        // Auto Copy to Clipboard functionality
+        autoCopyToClipboard(finalUrl);
     }
 
+    // Password Verification
     function verifyPassword() {
         const inputPass = document.getElementById('input-password').value;
         const errorMsg = document.getElementById('error-msg');
@@ -181,16 +195,25 @@
                 errorMsg.style.display = 'block';
             }
         } catch (e) {
-            alert("লিংকটি সঠিক নয়!");
+            alert("Invalid or corrupted link!");
         }
     }
 
-    // সহজে লিংক কপি করার জন্য ফাংশন
-    function copyToClipboard() {
-        const text = document.getElementById('generated-url').innerText;
-        navigator.clipboard.writeText(text).then(() => {
-            alert("🔗 লিংকটি কপি করা হয়েছে!");
-        });
+    // Helper function for automatic copying
+    function autoCopyToClipboard(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).catch(err => {
+                console.error("Failed to copy automatically: ", err);
+            });
+        } else {
+            // Fallback for older browsers
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand("copy");
+            document.body.removeChild(textArea);
+        }
     }
 </script>
 
